@@ -1,32 +1,268 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>W.Decision Matrixo</title>
-  <script defer src="/static/script.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>W.Decision Matrixo</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#0c0c0d;
+  --panel:#161618;
+  --border:#2a2a2e;
+  --text:#f3f1ec;
+  --muted:#7a7873;
+  --accent:#e8d5a3;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background: radial-gradient(circle at 20% 20%, #1a1a1d, #0c0c0d);
+  color:var(--text);
+  font-family:"IBM Plex Sans",sans-serif;
+  padding:30px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+h1{
+  font-family:"Fraunces",serif;
+  font-size:32px;
+  margin-bottom:6px;
+}
+
+.sub{
+  color:var(--muted);
+  margin-bottom:30px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px;
+}
+
+.label{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:12px;
+  text-transform:uppercase;
+}
+
+/* inputs */
+input{
+  width:100%;
+  background:#1f1f23;
+  border:1px solid var(--border);
+  color:white;
+  padding:8px;
+  border-radius:6px;
+}
+
+.row{
+  display:flex;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+button{
+  background:var(--accent);
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:500;
+}
+
+.list{
+  margin-bottom:10px;
+}
+
+.item{
+  padding:8px;
+  background:#1f1f23;
+  border-radius:6px;
+  margin-bottom:6px;
+}
+
+/* table */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+td,th{
+  padding:6px;
+  text-align:center;
+}
+
+.score-input{
+  width:50px;
+}
+
+/* results */
+.result{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.bar{
+  height:6px;
+  background:var(--accent);
+  flex:1;
+  border-radius:4px;
+}
+</style>
 </head>
 
-<body style="background:#0b0b0c;color:white;font-family:sans-serif;padding:20px">
+<body>
+<div class="container">
 
-<h2>W.Decision Matrixo</h2>
+<h1>Decision Matrix</h1>
+<div class="sub">Weight criteria · score options · find best choice</div>
 
-<h3>Criteria</h3>
-<div id="criteria"></div>
+<div class="grid">
+
+<div class="panel">
+<div class="label">Criteria</div>
+
+<div id="criteriaList" class="list"></div>
+
+<div class="row">
 <input id="critName" placeholder="Name">
 <input id="critWeight" type="number" placeholder="Weight">
-<button onclick="addCriterion()">Add</button>
+</div>
 
-<h3>Options</h3>
-<div id="options"></div>
+<button onclick="addCriterion()">Add</button>
+</div>
+
+<div class="panel">
+<div class="label">Options</div>
+
+<div id="optionList" class="list"></div>
+
 <input id="optName" placeholder="Option">
 <button onclick="addOption()">Add</button>
+</div>
 
-<h3>Scores (0–10)</h3>
-<div id="scores"></div>
+</div>
 
-<button onclick="calculate()">Calculate</button>
+<div class="panel" style="margin-top:20px">
+<div class="label">Scores</div>
+<div id="scoreTable"></div>
+</div>
 
-<h3>Results</h3>
+<div class="panel" style="margin-top:20px">
+<div class="label">Results</div>
 <div id="results"></div>
+</div>
+
+</div>
+
+<script>
+let criteria=[];
+let options=[];
+let scores={};
+
+function uid(){return Math.random().toString(36).slice(2,8)}
+
+function addCriterion(){
+  let n=critName.value.trim();
+  let w=parseInt(critWeight.value);
+  if(!n||isNaN(w))return;
+
+  criteria.push({id:uid(),name:n,weight:w});
+  critName.value="";critWeight.value="";
+  render();
+}
+
+function addOption(){
+  let n=optName.value.trim();
+  if(!n)return;
+
+  options.push({id:uid(),name:n});
+  optName.value="";
+  render();
+}
+
+function render(){
+  criteriaList.innerHTML=criteria.map(c=>
+    `<div class="item">${c.name} (${c.weight})</div>`
+  ).join("");
+
+  optionList.innerHTML=options.map(o=>
+    `<div class="item">${o.name}</div>`
+  ).join("");
+
+  renderTable();
+}
+
+function renderTable(){
+  if(!criteria.length||!options.length){
+    scoreTable.innerHTML="Add data first";
+    return;
+  }
+
+  let html="<table><tr><th></th>";
+  criteria.forEach(c=>html+=`<th>${c.name}</th>`);
+  html+="</tr>";
+
+  options.forEach(o=>{
+    html+=`<tr><td>${o.name}</td>`;
+    criteria.forEach(c=>{
+      let k=o.id+"_"+c.id;
+      html+=`<td>
+        <input class="score-input" type="number" min="0" max="10"
+        value="${scores[k]||5}"
+        onchange="scores['${k}']=this.value;calc()">
+      </td>`;
+    });
+    html+="</tr>";
+  });
+
+  html+="</table>";
+  scoreTable.innerHTML=html;
+}
+
+function calc(){
+  let tw=criteria.reduce((a,c)=>a+c.weight,0)||1;
+
+  let res=options.map(o=>{
+    let s=0;
+    criteria.forEach(c=>{
+      let v=scores[o.id+"_"+c.id]||5;
+      s+=v*(c.weight/tw);
+    });
+    return {name:o.name,score:s};
+  });
+
+  res.sort((a,b)=>b.score-a.score);
+
+  results.innerHTML=res.map((r,i)=>`
+    <div class="result">
+      ${i+1}. ${r.name}
+      <div class="bar" style="width:${r.score*10}%"></div>
+      ${r.score.toFixed(2)}
+    </div>
+  `).join("");
+}
+</script>
 
 </body>
 </html>
