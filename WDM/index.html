@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Decision Matrix</title>
+  <script defer src="/static/script.js"></script>
+</head>
+
+<body style="background:#0b0b0c;color:white;font-family:sans-serif;padding:20px">
+
+<h2>Decision Matrix</h2>
+
+<h3>Criteria</h3>
+<div id="criteria"></div>
+<input id="critName" placeholder="Name">
+<input id="critWeight" type="number" placeholder="Weight">
+<button onclick="addCriterion()">Add</button>
+
+<h3>Options</h3>
+<div id="options"></div>
+<input id="optName" placeholder="Option">
+<button onclick="addOption()">Add</button>
+
+<h3>Scores (0–10)</h3>
+<div id="scores"></div>
+
+<button onclick="calculate()">Calculate</button>
+
+<h3>Results</h3>
+<div id="results"></div>
+
+</body>
+</html>
